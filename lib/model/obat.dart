@@ -1,5 +1,5 @@
 class Obat {
-  int id;
+  int obatsId;
   String name;
   String description;
   int price;
@@ -7,7 +7,7 @@ class Obat {
   String? image;
 
   Obat({
-    required this.id,
+    required this.obatsId,
     required this.name,
     required this.description,
     required this.price,
@@ -17,7 +17,7 @@ class Obat {
 
   factory Obat.fromJson(Map<String, dynamic> json) {
     return Obat(
-      id: json['id'],
+      obatsId: json['obats_id'],
       name: json['name'],
       description: json['description'],
       price: json['price'],
@@ -28,7 +28,7 @@ class Obat {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'obats_id': obatsId,
       'name': name,
       'description': description,
       'price': price,

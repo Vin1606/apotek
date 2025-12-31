@@ -657,7 +657,8 @@ class _ObatPageState extends State<ObatPage>
               children: [
                 // GAMBAR
                 Hero(
-                  tag: 'obat_${obat.id}', // Efek animasi jika pindah halaman
+                  tag:
+                      'obat_${obat.obatsId}', // Efek animasi jika pindah halaman
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child:
@@ -774,7 +775,7 @@ class _ObatPageState extends State<ObatPage>
 
                 // Tombol Hapus
                 IconButton(
-                  onPressed: () => _confirmDelete(obat.id, obat.name),
+                  onPressed: () => _confirmDelete(obat.obatsId, obat.name),
                   icon: Icon(
                     Icons.delete_outline_rounded,
                     color: Colors.red.withOpacity(0.6),

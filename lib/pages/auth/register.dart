@@ -47,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     // Buat object User (ID 0 karena auto-increment di backend)
     User newUser = User(
-      id: 0,
+      usersId: 0,
       name: _nameController.text.trim(),
       age: int.tryParse(_ageController.text.trim()) ?? 0,
       address: _addressController.text.trim(),

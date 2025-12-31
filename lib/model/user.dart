@@ -1,5 +1,5 @@
 class User {
-  int id;
+  int usersId;
   String name;
   int age;
   String address;
@@ -7,7 +7,7 @@ class User {
   String password;
 
   User({
-    required this.id,
+    required this.usersId,
     required this.name,
     required this.age,
     required this.address,
@@ -17,7 +17,7 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
+      usersId: json['users_id'],
       name: json['name'],
       age: json['age'],
       address: json['address'],
@@ -28,7 +28,7 @@ class User {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'users_id': usersId,
       'name': name,
       'age': age,
       'address': address,
@@ -39,14 +39,14 @@ class User {
 }
 
 class UserProfile {
-  int id;
+  int usersId;
   String name;
   int age;
   String address;
   String email;
 
   UserProfile({
-    required this.id,
+    required this.usersId,
     required this.name,
     required this.age,
     required this.address,
@@ -55,7 +55,7 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'],
+      usersId: json['users_id'],
       name: json['name'],
       age: json['age'],
       address: json['address'],

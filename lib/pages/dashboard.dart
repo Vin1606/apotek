@@ -4,6 +4,7 @@ import 'package:apotek/model/user.dart';
 import 'package:apotek/service/api_service.dart';
 import 'package:apotek/pages/obat/create_obat.dart';
 import 'package:apotek/pages/auth/login.dart';
+import 'package:apotek/pages/profile/profile.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -444,6 +445,34 @@ class _DashboardPageState extends State<DashboardPage> {
                     color: Colors.red.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
+                  child: const Icon(Icons.settings, color: Colors.red),
+                ),
+                title: const Text(
+                  'Akun Saya',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfilePage(),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 20),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
                   child: const Icon(Icons.logout_rounded, color: Colors.red),
                 ),
                 title: const Text(
@@ -465,38 +494,64 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  void _confirmLogout() {
+  // Terima context dari dashboard
+  void _confirmLogout() async {
+    // Periksa apakah state widget masih terpasang sebelum menampilkan dialog
+    if (!mounted) return;
+
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: const Text('Konfirmasi Keluar'),
             content: const Text(
               'Apakah Anda yakin ingin keluar dari aplikasi?',
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Batal'),
               ),
               ElevatedButton(
                 onPressed: () async {
-                  Navigator.pop(context);
-                  await _apiService.logoutUser();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Logout berhasil'),
-                        backgroundColor: secondaryColor,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) => const LoginPage(),
-                      ),
-                      (route) => false,
-                    );
+                  // Tutup dialog konfirmasi
+                  if (Navigator.canPop(dialogContext)) {
+                    Navigator.pop(dialogContext);
+                  }
+
+                  try {
+                    await _apiService.logoutUser();
+
+                    // Periksa lagi apakah state widget masih terpasang sebelum navigasi
+                    if (mounted) {
+                      // Gunakan context dari state untuk ScaffoldMessenger dan Navigator
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Logout berhasil'),
+                          backgroundColor: secondaryColor,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                        (route) => false, // Hapus semua route sebelumnya
+                      );
+                    }
+                  } catch (e) {
+                    // Tangani error logout jika terjadi
+                    if (mounted) {
+                      // Gunakan context dari state untuk ScaffoldMeSssenger
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Logout gagal: $e'),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(

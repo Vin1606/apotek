@@ -85,7 +85,7 @@ class _EditObatPageState extends State<EditObatPage> {
 
     try {
       final success = await _apiService.updateObat(
-        id: widget.obat.id,
+        id: widget.obat.obatsId,
         name: name,
         description: description,
         price: price,
