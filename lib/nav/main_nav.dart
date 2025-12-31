@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:apotek/pages/obat/obat_page.dart';
 import 'package:apotek/pages/dashboard.dart';
+import 'package:apotek/pages/order/order_page.dart';
+import 'package:apotek/pages/cashier/cashier_orders_page.dart';
+import 'package:apotek/service/api_service.dart';
 
 class MainNavPage extends StatefulWidget {
   const MainNavPage({super.key});
@@ -11,22 +14,91 @@ class MainNavPage extends StatefulWidget {
 
 class _MainNavPageState extends State<MainNavPage> {
   int _selectedIndex = 0;
+  String _role = '';
+  bool _loadingRole = true;
 
-  // Daftar halaman yang akan ditampilkan
-  final List<Widget> _pages = [
-    const DashboardPage(),
-    const ObatPage(),
-    // const OrderPage(),
-    // const HistoryPage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    final api = ApiService();
+    final profResp = await api.getCurrentUser();
+    final prof = profResp != null && profResp['data'] != null ? profResp['data'] : null;
+    setState(() {
+      _role = prof != null ? (prof['role'] ?? '') : '';
+      _loadingRole = false;
+    });
+  }
+
+  bool get _isCashier => _role == 'cashier';
+
+  List<Widget> get _pages {
+    if (_isCashier) {
+      return [
+        const DashboardPage(),
+        const ObatPage(),
+        const CashierOrdersPage(),
+      ];
+    }
+    return [
+      const DashboardPage(),
+      const ObatPage(),
+      const OrderPage(),
+    ];
+  }
+
+  List<NavigationDestination> get _destinations {
+    if (_isCashier) {
+      return const [
+        NavigationDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard),
+          label: 'Dashboard',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.medication_outlined),
+          selectedIcon: Icon(Icons.medication),
+          label: 'Obat',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.receipt_long_outlined),
+          selectedIcon: Icon(Icons.receipt_long),
+          label: 'Kelola Order',
+        ),
+      ];
+    }
+    return const [
+      NavigationDestination(
+        icon: Icon(Icons.dashboard_outlined),
+        selectedIcon: Icon(Icons.dashboard),
+        label: 'Dashboard',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.medication_outlined),
+        selectedIcon: Icon(Icons.medication),
+        label: 'Obat',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.shopping_cart_outlined),
+        selectedIcon: Icon(Icons.shopping_cart),
+        label: 'Order',
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // Menampilkan halaman sesuai index yang dipilih
-      body: _pages[_selectedIndex],
+    if (_loadingRole) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-      // Menu Navigasi Bawah Modern (Material 3)
+    return Scaffold(
+      body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
@@ -34,28 +106,7 @@ class _MainNavPageState extends State<MainNavPage> {
             _selectedIndex = index;
           });
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.medication),
-            selectedIcon: Icon(Icons.medication),
-            label: 'Obat',
-          ),
-          // NavigationDestination(
-          //   icon: Icon(Icons.trolley),
-          //   selectedIcon: Icon(Icons.trolley),
-          //   label: 'Order',
-          // ),
-          // NavigationDestination(
-          //   icon: Icon(Icons.history_outlined),
-          //   selectedIcon: Icon(Icons.history_rounded),
-          //   label: 'Riwayat',
-          // ),
-        ],
+        destinations: _destinations,
       ),
     );
   }
@@ -92,7 +143,7 @@ class PlaceholderPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.1),
+                color: primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 64, color: primaryColor),
