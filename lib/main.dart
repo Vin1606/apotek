@@ -1,6 +1,8 @@
 import 'package:apotek/pages/auth/login.dart';
 import 'package:flutter/material.dart';
 import 'package:apotek/nav/main_nav.dart';
+import 'package:apotek/pages/order/orders_list_page.dart';
+import 'package:apotek/pages/cashier/cashier_orders_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -28,6 +30,10 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: isLoggedIn ? const MainNavPage() : const LoginPage(),
+      routes: {
+        '/orders': (context) => const OrdersListPage(),
+        '/cashier/orders': (context) => const CashierOrdersPage(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }

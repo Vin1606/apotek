@@ -124,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
 
               Card(
                 elevation: 4,
-                shadowColor: Colors.black.withValues(alpha: 0.1),
+                shadowColor: Colors.black.withOpacity(0.1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -259,7 +259,7 @@ class _LoginPageState extends State<LoginPage> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: primaryColor.withValues(alpha: 0.7)),
+  prefixIcon: Icon(icon, color: primaryColor.withOpacity(0.7)),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
