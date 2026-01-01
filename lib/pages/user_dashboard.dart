@@ -4,6 +4,7 @@ import 'package:apotek/model/user.dart';
 import 'package:apotek/service/api_service.dart';
 import 'package:apotek/pages/auth/login.dart';
 import 'package:apotek/pages/profile/profile.dart';
+import 'package:apotek/pages/order/order_page.dart';
 
 class UserDashboardPage extends StatefulWidget {
   const UserDashboardPage({super.key});
@@ -17,6 +18,8 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   late Future<List<Obat>> _obatList;
   late Future<UserProfile?> _userProfile;
   final TextEditingController _searchController = TextEditingController();
+
+  final List<Obat> _cartItems = [];
 
   // Colors
   static const Color primaryColor = Color(0xFF1E88E5);
@@ -45,6 +48,40 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     });
   }
 
+  void _onPesanObat(Obat obat) {
+    setState(() {
+      _cartItems.add(obat);
+    });
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${obat.name} ditambahkan ke keranjang'),
+        backgroundColor: secondaryColor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(milliseconds: 1500),
+        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      ),
+    );
+  }
+
+  Future<void> _navigateToCart() async {
+    final updatedCart = await Navigator.push<List<Obat>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderPage(initialItems: _cartItems),
+      ),
+    );
+
+    if (updatedCart != null) {
+      setState(() {
+        _cartItems.clear();
+        _cartItems.addAll(updatedCart);
+      });
+    }
+  }
+
+  int get _totalPrice => _cartItems.fold(0, (sum, item) => sum + item.price);
+
   String _formatCurrency(int value) {
     return value.toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -56,6 +93,31 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
+
+      floatingActionButton:
+          _cartItems.isNotEmpty
+              ? FloatingActionButton.extended(
+                onPressed: _navigateToCart,
+                backgroundColor: accentColor,
+                icon: Badge(
+                  label: Text('${_cartItems.length}'),
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
+                  child: const Icon(
+                    Icons.shopping_cart_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+                label: Text(
+                  'Rp ${_formatCurrency(_totalPrice)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              )
+              : null,
+
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: CustomScrollView(
@@ -178,12 +240,16 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                       hintText: 'Cari obat yang Anda butuhkan...',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: const Icon(Icons.search, color: primaryColor),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, color: Colors.grey),
-                              onPressed: () => _searchController.clear(),
-                            )
-                          : null,
+                      suffixIcon:
+                          _searchController.text.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () => _searchController.clear(),
+                              )
+                              : null,
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -244,9 +310,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: primaryColor.withOpacity(0.2),
-                    ),
+                    border: Border.all(color: primaryColor.withOpacity(0.2)),
                   ),
                   child: Row(
                     children: [
@@ -342,7 +406,11 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                         padding: const EdgeInsets.all(40),
                         child: Column(
                           children: [
-                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.red,
+                            ),
                             const SizedBox(height: 16),
                             Text('Gagal memuat data: ${snapshot.error}'),
                             const SizedBox(height: 16),
@@ -359,10 +427,11 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
 
                 final allObat = snapshot.data ?? [];
                 final searchQuery = _searchController.text.toLowerCase();
-                final filteredObat = allObat.where((obat) {
-                  return obat.name.toLowerCase().contains(searchQuery) ||
-                      obat.description.toLowerCase().contains(searchQuery);
-                }).toList();
+                final filteredObat =
+                    allObat.where((obat) {
+                      return obat.name.toLowerCase().contains(searchQuery) ||
+                          obat.description.toLowerCase().contains(searchQuery);
+                    }).toList();
 
                 if (filteredObat.isEmpty) {
                   return SliverToBoxAdapter(
@@ -371,7 +440,11 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                         padding: const EdgeInsets.all(40),
                         child: Column(
                           children: [
-                            Icon(Icons.medication_outlined, size: 64, color: Colors.grey[300]),
+                            Icon(
+                              Icons.medication_outlined,
+                              size: 64,
+                              color: Colors.grey[300],
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               searchQuery.isEmpty
@@ -389,22 +462,17 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                 return SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final obat = filteredObat[index];
-                        return _buildObatCard(obat);
-                      },
-                      childCount: filteredObat.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final obat = filteredObat[index];
+                      return _buildObatCard(obat);
+                    }, childCount: filteredObat.length),
                   ),
                 );
               },
             ),
 
             // Bottom padding
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 100),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
       ),
@@ -457,13 +525,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
             },
           ),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         ],
       ),
     );
@@ -502,18 +564,11 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
               child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(height: 12),
-            Icon(
-              Icons.arrow_forward_rounded,
-              color: color,
-              size: 28,
-            ),
+            Icon(Icons.arrow_forward_rounded, color: color, size: 28),
             const SizedBox(height: 4),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -523,7 +578,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
 
   Widget _buildObatCard(Obat obat) {
     final bool isAvailable = obat.stock > 0;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -551,21 +606,23 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                   width: 80,
                   height: 80,
                   color: Colors.grey[100],
-                  child: obat.image != null && obat.image!.isNotEmpty
-                      ? Image.network(
-                          obat.image!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
+                  child:
+                      obat.image != null && obat.image!.isNotEmpty
+                          ? Image.network(
+                            obat.image!,
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (_, __, ___) => const Icon(
+                                  Icons.medication_rounded,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
+                          )
+                          : const Icon(
                             Icons.medication_rounded,
                             size: 40,
                             color: Colors.grey,
                           ),
-                        )
-                      : const Icon(
-                          Icons.medication_rounded,
-                          size: 40,
-                          color: Colors.grey,
-                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -594,9 +651,10 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: isAvailable
-                                ? secondaryColor.withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
+                            color:
+                                isAvailable
+                                    ? secondaryColor.withOpacity(0.1)
+                                    : Colors.red.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -613,10 +671,7 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                     const SizedBox(height: 4),
                     Text(
                       obat.description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -649,17 +704,18 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                         SizedBox(
                           height: 32,
                           child: ElevatedButton.icon(
-                            onPressed: isAvailable
-                                ? () => _onPesanObat(obat)
-                                : null,
-                            icon: const Icon(Icons.add_shopping_cart, size: 16),
-                            label: const Text('Pesan'),
+                            onPressed:
+                                isAvailable ? () => _onPesanObat(obat) : null,
+                            // icon: const Icon(Icons.add_shopping_cart, size: 16),
+                            label: const Text('+ Pesan'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColor,
                               foregroundColor: Colors.white,
                               disabledBackgroundColor: Colors.grey[300],
                               disabledForegroundColor: Colors.grey[500],
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               textStyle: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -682,225 +738,209 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     );
   }
 
-  void _onPesanObat(Obat obat) {
-    // Placeholder untuk fitur order nanti
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text('Fitur pemesanan "${obat.name}" segera hadir'),
-            ),
-          ],
-        ),
-        backgroundColor: primaryColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  }
-
   void _showObatDetail(Obat obat) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Handle
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder:
+          (context) => Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Image
-                    Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          width: 200,
-                          height: 200,
-                          color: Colors.grey[100],
-                          child: obat.image != null && obat.image!.isNotEmpty
-                              ? Image.network(
-                                  obat.image!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.medication_rounded,
-                                    size: 80,
-                                    color: Colors.grey,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.medication_rounded,
-                                  size: 80,
-                                  color: Colors.grey,
-                                ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Name
-                    Text(
-                      obat.name,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D3142),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Price
-                    Text(
-                      'Rp ${_formatCurrency(obat.price)}',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Stock
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: obat.stock > 0
-                            ? secondaryColor.withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        obat.stock > 0
-                            ? 'Stok tersedia: ${obat.stock} unit'
-                            : 'Stok habis',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: obat.stock > 0 ? secondaryColor : Colors.red,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Description
-                    const Text(
-                      'Deskripsi',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D3142),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      obat.description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Delivery info
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: secondaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.local_shipping_rounded,
-                            color: secondaryColor,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Pengiriman Tersedia',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: secondaryColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Obat dapat dikirim ke alamat Anda',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
+            child: Column(
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Image
+                        Center(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              width: 200,
+                              height: 200,
+                              color: Colors.grey[100],
+                              child:
+                                  obat.image != null && obat.image!.isNotEmpty
+                                      ? Image.network(
+                                        obat.image!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (_, __, ___) => const Icon(
+                                              Icons.medication_rounded,
+                                              size: 80,
+                                              color: Colors.grey,
+                                            ),
+                                      )
+                                      : const Icon(
+                                        Icons.medication_rounded,
+                                        size: 80,
+                                        color: Colors.grey,
+                                      ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Order Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton.icon(
-                        onPressed: obat.stock > 0
-                            ? () {
-                                Navigator.pop(context);
-                                _onPesanObat(obat);
-                              }
-                            : null,
-                        icon: const Icon(Icons.shopping_bag_rounded),
-                        label: Text(
-                          obat.stock > 0 ? 'Pesan Sekarang' : 'Stok Habis',
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey[300],
-                          disabledForegroundColor: Colors.grey[500],
-                          textStyle: const TextStyle(
+                        const SizedBox(height: 24),
+                        // Name
+                        Text(
+                          obat.name,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D3142),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Price
+                        Text(
+                          'Rp ${_formatCurrency(obat.price)}',
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Stock
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                obat.stock > 0
+                                    ? secondaryColor.withOpacity(0.1)
+                                    : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            obat.stock > 0
+                                ? 'Stok tersedia: ${obat.stock} unit'
+                                : 'Stok habis',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color:
+                                  obat.stock > 0 ? secondaryColor : Colors.red,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Description
+                        const Text(
+                          'Deskripsi',
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            color: Color(0xFF2D3142),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        Text(
+                          obat.description,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Delivery info
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: secondaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.local_shipping_rounded,
+                                color: secondaryColor,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Pengiriman Tersedia',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: secondaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Obat dapat dikirim ke alamat Anda',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Order Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                obat.stock > 0
+                                    ? () {
+                                      Navigator.pop(context);
+                                      _onPesanObat(obat);
+                                    }
+                                    : null,
+                            icon: const Icon(Icons.shopping_bag_rounded),
+                            label: Text(
+                              obat.stock > 0 ? 'Pesan Sekarang' : 'Stok Habis',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey[300],
+                              disabledForegroundColor: Colors.grey[500],
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -908,90 +948,99 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
     showModalBottomSheet(
       context: parentContext,
       backgroundColor: Colors.transparent,
-      builder: (bottomSheetContext) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder:
+          (bottomSheetContext) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: primaryColor,
-                child: Icon(Icons.person, color: Colors.white),
-              ),
-              title: const Text('Profil Saya'),
-              subtitle: const Text('Lihat dan edit profil'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(bottomSheetContext);
-                Navigator.push(
-                  parentContext,
-                  MaterialPageRoute(builder: (_) => const ProfilePage()),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.red.withOpacity(0.1),
-                child: const Icon(Icons.logout, color: Colors.red),
-              ),
-              title: const Text('Keluar', style: TextStyle(color: Colors.red)),
-              subtitle: const Text('Logout dari akun'),
-              onTap: () async {
-                Navigator.pop(bottomSheetContext);
-                final confirm = await showDialog<bool>(
-                  context: parentContext,
-                  builder: (dialogContext) => AlertDialog(
-                    title: const Text('Konfirmasi Logout'),
-                    content: const Text('Apakah Anda yakin ingin keluar?'),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dialogContext, false),
-                        child: const Text('Batal'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(dialogContext, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Keluar'),
-                      ),
-                    ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                );
-
-                if (confirm == true) {
-                  await _apiService.logoutUser();
-                  if (mounted) {
-                    Navigator.of(parentContext).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                      (route) => false,
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: primaryColor,
+                    child: Icon(Icons.person, color: Colors.white),
+                  ),
+                  title: const Text('Profil Saya'),
+                  subtitle: const Text('Lihat dan edit profil'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.pop(bottomSheetContext);
+                    Navigator.push(
+                      parentContext,
+                      MaterialPageRoute(builder: (_) => const ProfilePage()),
                     );
-                  }
-                }
-              },
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.red.withOpacity(0.1),
+                    child: const Icon(Icons.logout, color: Colors.red),
+                  ),
+                  title: const Text(
+                    'Keluar',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  subtitle: const Text('Logout dari akun'),
+                  onTap: () async {
+                    Navigator.pop(bottomSheetContext);
+                    final confirm = await showDialog<bool>(
+                      context: parentContext,
+                      builder:
+                          (dialogContext) => AlertDialog(
+                            title: const Text('Konfirmasi Logout'),
+                            content: const Text(
+                              'Apakah Anda yakin ingin keluar?',
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed:
+                                    () => Navigator.pop(dialogContext, false),
+                                child: const Text('Batal'),
+                              ),
+                              ElevatedButton(
+                                onPressed:
+                                    () => Navigator.pop(dialogContext, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('Keluar'),
+                              ),
+                            ],
+                          ),
+                    );
+
+                    if (confirm == true) {
+                      await _apiService.logoutUser();
+                      if (mounted) {
+                        Navigator.of(parentContext).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
+                          (route) => false,
+                        );
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

@@ -38,7 +38,7 @@ class ApiService {
   Future<String> getCurrentUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     String? role = prefs.getString('role');
-    
+
     // Jika role belum tersimpan, coba ambil dari profile
     if (role == null || role.isEmpty) {
       final profile = await getUserProfile();
@@ -47,7 +47,7 @@ class ApiService {
         await _saveRole(role);
       }
     }
-    
+
     return role ?? 'user';
   }
 
@@ -257,7 +257,7 @@ class ApiService {
         print('Received token: $token');
         if (token != null) {
           await _saveToken(token);
-          
+
           // Coba ambil role dari response login
           final role = body['data']['role'];
           if (role != null && role.toString().isNotEmpty) {
@@ -330,6 +330,105 @@ class ApiService {
     } catch (e) {
       print('Error fetching user profile: $e');
       return null;
+    }
+  }
+
+  Future<bool> updateUserProfile({
+    required int usersId,
+    required String name,
+    required String email,
+    required int age,
+    required String address,
+  }) async {
+    final url = Uri.parse('$_baseUrl/api/profile/$usersId');
+    try {
+      final token = await _getToken();
+      if (token == null) return false;
+
+      final resp = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'age': age,
+          'address': address,
+        }),
+      );
+
+      return resp.statusCode == 200;
+    } catch (e) {
+      print('Error updating user profile: $e');
+      return false;
+    }
+  }
+
+  // ORDER
+  Future<bool> createOrder(
+    Map<String, dynamic> orderData, {
+    XFile? image,
+    Uint8List? imageBytes,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/api/ordersPayment');
+    final token = await _getToken();
+
+    try {
+      var request = http.MultipartRequest('POST', uri);
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+
+      // Tambahkan field data (convert List/Map ke JSON string)
+      orderData.forEach((key, value) {
+        if (value is List) {
+          // Pecah List menjadi format array form-data: items[0][field]
+          for (int i = 0; i < value.length; i++) {
+            if (value[i] is Map) {
+              (value[i] as Map).forEach((subKey, subValue) {
+                request.fields['$key[$i][$subKey]'] = subValue.toString();
+              });
+            } else {
+              request.fields['$key[$i]'] = value[i].toString();
+            }
+          }
+        } else {
+          request.fields[key] = value.toString();
+        }
+      });
+
+      // Tambahkan file gambar jika ada
+      if (imageBytes != null) {
+        final filename = image?.name ?? 'payment.jpg';
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'image_payment',
+            imageBytes,
+            filename: filename,
+          ),
+        );
+      } else if (image != null && !kIsWeb) {
+        final file = File(image.path);
+        request.files.add(
+          await http.MultipartFile.fromPath('image_payment', file.path),
+        );
+      }
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return true;
+      } else {
+        print('Order Failed: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error creating order: $e');
+      return false;
     }
   }
 }

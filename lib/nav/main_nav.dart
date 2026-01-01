@@ -3,6 +3,8 @@ import 'package:apotek/pages/obat/obat_page.dart';
 import 'package:apotek/pages/dashboard.dart';
 import 'package:apotek/pages/user_dashboard.dart';
 import 'package:apotek/service/api_service.dart';
+// import 'package:apotek/pages/order/order_page.dart';
+import 'package:apotek/pages/profile/profile.dart';
 
 class MainNavPage extends StatefulWidget {
   const MainNavPage({super.key});
@@ -36,16 +38,10 @@ class _MainNavPageState extends State<MainNavPage> {
   List<Widget> get _pages {
     if (_isAdmin) {
       // Admin pages: Dashboard Admin + Kelola Obat
-      return [
-        const DashboardPage(),
-        const ObatPage(),
-      ];
+      return [const DashboardPage(), const ObatPage(), const ObatPage()];
     } else {
       // User pages: Dashboard User (Pasien) + Katalog Obat (view only)
-      return [
-        const UserDashboardPage(),
-        const ObatPage(),
-      ];
+      return [const UserDashboardPage(), const ObatPage(), const ProfilePage()];
     }
   }
 
@@ -62,6 +58,11 @@ class _MainNavPageState extends State<MainNavPage> {
           selectedIcon: Icon(Icons.medication),
           label: 'Kelola Obat',
         ),
+        NavigationDestination(
+          icon: Icon(Icons.medication_outlined),
+          selectedIcon: Icon(Icons.medication),
+          label: 'Order',
+        ),
       ];
     } else {
       return const [
@@ -73,7 +74,12 @@ class _MainNavPageState extends State<MainNavPage> {
         NavigationDestination(
           icon: Icon(Icons.medication_outlined),
           selectedIcon: Icon(Icons.medication),
-          label: 'Katalog Obat',
+          label: 'Riwayat',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.medication_outlined),
+          selectedIcon: Icon(Icons.medication),
+          label: 'Profile',
         ),
       ];
     }
@@ -82,11 +88,7 @@ class _MainNavPageState extends State<MainNavPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(

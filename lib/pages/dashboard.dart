@@ -476,15 +476,15 @@ class _DashboardPageState extends State<DashboardPage> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.green.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.settings, color: Colors.red),
+                  child: const Icon(Icons.people, color: Colors.green),
                 ),
                 title: const Text(
                   'Akun Saya',
                   style: TextStyle(
-                    color: Colors.red,
+                    color: Colors.green,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

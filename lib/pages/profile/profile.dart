@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:apotek/model/user.dart';
 import 'package:apotek/service/api_service.dart';
 import 'package:apotek/pages/auth/login.dart';
+import 'package:apotek/pages/profile/edit_profile.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -273,15 +274,18 @@ class _ProfilePageState extends State<ProfilePage> {
                               _buildSettingItem(
                                 icon: Icons.edit_outlined,
                                 label: 'Edit Profil',
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Fitur Edit Profil segera hadir',
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
+                                onTap: () async {
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) =>
+                                              EditProfilePage(user: user),
                                     ),
                                   );
+                                  if (result == true) {
+                                    _refresh();
+                                  }
                                 },
                               ),
                               _buildDivider(),
@@ -315,7 +319,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 20),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
