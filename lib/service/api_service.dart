@@ -26,6 +26,41 @@ class ApiService {
   Future<void> _removeToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    await prefs.remove('role');
+  }
+
+  // ROLE MANAGEMENT
+  Future<void> _saveRole(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('role', role);
+  }
+
+  Future<String> getCurrentUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? role = prefs.getString('role');
+    
+    // Jika role belum tersimpan, coba ambil dari profile
+    if (role == null || role.isEmpty) {
+      final profile = await getUserProfile();
+      if (profile != null) {
+        role = profile.role;
+        await _saveRole(role);
+      }
+    }
+    
+    return role ?? 'user';
+  }
+
+  Future<bool> isAdmin() async {
+    final role = await getCurrentUserRole();
+    return role == 'admin';
+  }
+
+  Future<void> refreshUserRole() async {
+    final profile = await getUserProfile();
+    if (profile != null) {
+      await _saveRole(profile.role);
+    }
   }
 
   Future<List<Obat>> fetchData() async {
@@ -222,6 +257,17 @@ class ApiService {
         print('Received token: $token');
         if (token != null) {
           await _saveToken(token);
+          
+          // Coba ambil role dari response login
+          final role = body['data']['role'];
+          if (role != null && role.toString().isNotEmpty) {
+            await _saveRole(role);
+            print('Role from login: $role');
+          } else {
+            // Jika tidak ada role di response login, ambil dari profile
+            await refreshUserRole();
+            print('Role fetched from profile');
+          }
         }
         return true;
       } else {

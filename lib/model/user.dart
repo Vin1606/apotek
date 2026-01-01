@@ -5,6 +5,7 @@ class User {
   String address;
   String email;
   String password;
+  String role; // 'admin' or 'user'
 
   User({
     required this.usersId,
@@ -13,6 +14,7 @@ class User {
     required this.address,
     required this.email,
     required this.password,
+    this.role = 'user',
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class User {
       address: json['address'],
       email: json['email'],
       password: json['password'],
+      role: json['role'] ?? 'user',
     );
   }
 
@@ -34,8 +37,12 @@ class User {
       'address': address,
       'email': email,
       'password': password,
+      'role': role,
     };
   }
+
+  bool get isAdmin => role == 'admin';
+  bool get isUser => role == 'user';
 }
 
 class UserProfile {
@@ -44,6 +51,7 @@ class UserProfile {
   int age;
   String address;
   String email;
+  String role;
 
   UserProfile({
     required this.usersId,
@@ -51,6 +59,7 @@ class UserProfile {
     required this.age,
     required this.address,
     required this.email,
+    this.role = 'user',
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -60,6 +69,10 @@ class UserProfile {
       age: json['age'],
       address: json['address'],
       email: json['email'],
+      role: json['role'] ?? 'user',
     );
   }
+
+  bool get isAdmin => role == 'admin';
+  bool get isUser => role == 'user';
 }

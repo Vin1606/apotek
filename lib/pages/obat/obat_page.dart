@@ -18,6 +18,7 @@ class _ObatPageState extends State<ObatPage>
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   late AnimationController _animationController;
+  bool _isAdmin = false;
 
   // Palet Warna Modern
   static const Color primaryColor = Color(0xFF1E88E5);
@@ -31,6 +32,7 @@ class _ObatPageState extends State<ObatPage>
   void initState() {
     super.initState();
     _obatList = _fetchObat();
+    _loadUserRole();
     _searchController.addListener(() {
       setState(() {});
     });
@@ -40,6 +42,15 @@ class _ObatPageState extends State<ObatPage>
       vsync: this,
     );
     _animationController.forward();
+  }
+
+  Future<void> _loadUserRole() async {
+    final isAdmin = await _apiService.isAdmin();
+    if (mounted) {
+      setState(() {
+        _isAdmin = isAdmin;
+      });
+    }
   }
 
   @override
@@ -453,25 +464,27 @@ class _ObatPageState extends State<ObatPage>
           const SliverToBoxAdapter(child: SizedBox(height: 80)),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const CreateObatPage()));
-          if (result == true) {
-            setState(() {
-              _obatList = _fetchObat();
-            });
-          }
-        },
-        backgroundColor: primaryColor,
-        elevation: 4,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'Tambah',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
+      floatingActionButton: _isAdmin
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final result = await Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const CreateObatPage()));
+                if (result == true) {
+                  setState(() {
+                    _obatList = _fetchObat();
+                  });
+                }
+              },
+              backgroundColor: primaryColor,
+              elevation: 4,
+              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              label: const Text(
+                'Tambah',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            )
+          : null,
     );
   }
 
@@ -752,36 +765,39 @@ class _ObatPageState extends State<ObatPage>
                   ),
                 ),
 
-                // Tombol Edit
-                IconButton(
-                  onPressed: () async {
-                    final result = await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => EditObatPage(obat: obat),
-                      ),
-                    );
-                    if (result == true) {
-                      setState(() {
-                        _obatList = _fetchObat();
-                      });
-                    }
-                  },
-                  icon: Icon(
-                    Icons.edit_outlined,
-                    color: Colors.blue.withOpacity(0.6),
+                // Tombol Edit & Hapus (hanya untuk admin)
+                if (_isAdmin) ...[
+                  // Tombol Edit
+                  IconButton(
+                    onPressed: () async {
+                      final result = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => EditObatPage(obat: obat),
+                        ),
+                      );
+                      if (result == true) {
+                        setState(() {
+                          _obatList = _fetchObat();
+                        });
+                      }
+                    },
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      color: Colors.blue.withOpacity(0.6),
+                    ),
+                    tooltip: 'Edit',
                   ),
-                  tooltip: 'Edit',
-                ),
 
-                // Tombol Hapus
-                IconButton(
-                  onPressed: () => _confirmDelete(obat.obatsId, obat.name),
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    color: Colors.red.withOpacity(0.6),
+                  // Tombol Hapus
+                  IconButton(
+                    onPressed: () => _confirmDelete(obat.obatsId, obat.name),
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red.withOpacity(0.6),
+                    ),
+                    tooltip: 'Hapus',
                   ),
-                  tooltip: 'Hapus',
-                ),
+                ],
               ],
             ),
           ),
