@@ -431,4 +431,28 @@ class ApiService {
       return false;
     }
   }
+
+  // Get Orders
+  Future<List<dynamic>> getOrders() async {
+    final uri = Uri.parse('$_baseUrl/api/orders');
+    final token = await _getToken();
+    if (token == null) return [];
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> body = json.decode(response.body);
+      final List list = body['data'] ?? [];
+      return list;
+    } else {
+      throw Exception('Failed to load orders: ${response.statusCode}');
+    }
+  }
 }

@@ -278,8 +278,8 @@ class _UserDashboardPageState extends State<UserDashboardPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildQuickActionCard(
-                        icon: Icons.shopping_bag_rounded,
-                        title: 'Pesanan Saya',
+                        icon: Icons.chat,
+                        title: 'Chat Bot',
                         color: accentColor,
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(

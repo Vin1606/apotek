@@ -5,6 +5,7 @@ import 'package:apotek/pages/user_dashboard.dart';
 import 'package:apotek/service/api_service.dart';
 // import 'package:apotek/pages/order/order_page.dart';
 import 'package:apotek/pages/profile/profile.dart';
+import 'package:apotek/pages/order/history_page.dart';
 
 class MainNavPage extends StatefulWidget {
   const MainNavPage({super.key});
@@ -41,7 +42,11 @@ class _MainNavPageState extends State<MainNavPage> {
       return [const DashboardPage(), const ObatPage(), const ObatPage()];
     } else {
       // User pages: Dashboard User (Pasien) + Katalog Obat (view only)
-      return [const UserDashboardPage(), const ObatPage(), const ProfilePage()];
+      return [
+        const UserDashboardPage(),
+        const HistoryPage(),
+        const ProfilePage(),
+      ];
     }
   }
 
@@ -72,12 +77,12 @@ class _MainNavPageState extends State<MainNavPage> {
           label: 'Beranda',
         ),
         NavigationDestination(
-          icon: Icon(Icons.medication_outlined),
-          selectedIcon: Icon(Icons.medication),
+          icon: Icon(Icons.history),
+          selectedIcon: Icon(Icons.history),
           label: 'Riwayat',
         ),
         NavigationDestination(
-          icon: Icon(Icons.medication_outlined),
+          icon: Icon(Icons.settings),
           selectedIcon: Icon(Icons.medication),
           label: 'Profile',
         ),
